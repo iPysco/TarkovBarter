@@ -2,7 +2,8 @@ import requests
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-import itertools
+import cv2
+
 
 # API Endpoints
 TARKOV_GRAPHQL_API = "https://api.tarkov.dev/graphql"
@@ -105,11 +106,38 @@ def update_table():
     
     root.after(300000, update_table)  # Auto-refresh every 5 minutes
 
-# GUI Setup
+def update_video():
+    """Updates the video frame inside the tkinter window"""
+    ret, frame = cap.read()
+    if not ret:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart video when it ends
+        return
+    
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = cv2.resize(frame, (700, 400))  # Resize to fit window
+    img = Image.fromarray(frame)
+    img_tk = ImageTk.PhotoImage(image=img)
+
+    bg_label.img_tk = img_tk  # Keep reference
+    bg_label.config(image=img_tk)
+    
+    root.after(30, update_video)  # Schedule next frame update
+
+
+# Inicializa janela principal do Tkinter
 root = tk.Tk()
 root.title("Tarkov Barter Profits")
-root.geometry("700x400")
+root.geometry("800x600")
 
+# Carrega o vídeo
+video_path = "background.mov"
+cap = cv2.VideoCapture(video_path)
+
+# Video background label
+bg_label = tk.Label(root)
+bg_label.place(relwidth=1, relheight=1)  # Cover entire window
+
+# UI elements (make sure they appear on top)
 frame = ttk.Frame(root)
 frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -121,27 +149,12 @@ for col in columns:
 
 table.pack(fill="both", expand=True)
 
-# Load GIF
-gif_path = "/Users/ipysco/Documents/projetoTarkas/TarkovBarter/background.mp4"
-gif = Image.open(gif_path)
-
-# Convert frames to a list
-frames = [ImageTk.PhotoImage(frame.copy()) for frame in itertools.chain.from_iterable(
-    [gif.seek(i) or [gif.copy()] for i in range(gif.n_frames)]
-)]
-
-# Function to update the GIF animation
-def update_gif(frame_index=0):
-    bg_label.config(image=frames[frame_index])
-    root.after(100, update_gif, (frame_index + 1) % len(frames)) 
-
-# Create a label for the background
-bg_label = tk.Label(root)
-bg_label.place(relwidth=1, relheight=1) 
-
-# Ensure table appears on top of the background
-frame.lift()
+# Atualiza o vídeo e a tabela
+update_video()
 update_table()
+
 root.mainloop()
-# Start GIF animation
-update_gif()
+
+# Libera o vídeo quando o programa termina
+cap.release()
+cv2.destroyAllWindows()
