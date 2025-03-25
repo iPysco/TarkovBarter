@@ -1,0 +1,3 @@
+([('TarkovBarter',
+   '/Users/ipysco/Documents/projetoTarkas/TarkovBarter/dist/TarkovBarter',
+   'EXECUTABLE')],)
